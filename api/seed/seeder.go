@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/arikardnoir/asiwaju/api/models"
-	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
 
@@ -23,15 +22,14 @@ var users = []models.User{
 	},
 }
 
-var porducts = []models.Product{
+var products = []models.Product{
 	models.Product{
 		Name:   "AIR JORDAN 1 RETRO LOW OG EX",
 		Brand: "Nike",
 		Image:   "https://www.nike.com.br/air-jordan-1-retro-low-og-ex-023577.html?cor=ID#pid1",
 		Size:   "38;39;40;41;42",
 		Model:   "Air Jordan 1",
-		Price:   "90.000",
-		ExpDate: "",
+		Price:   90.000,
 		Description: "Chame-o de obra-prima inacabada. Esta versão trabalhada do AJ1 Low tem tudo a ver com bordas expostas e desgastadas, trazendo uma estética desconstruída para seu têni favorito.",
 	},
 	models.Product{
@@ -40,8 +38,7 @@ var porducts = []models.Product{
 		Image:  "https://images.rappi.com.br/products/630151d9-9e33-460a-bed0-4cc527424a74.jpg?d=128x128&e=webp&q=70",
 		Size:   "",
 		Model:  "",
-		Price:  "5.000",
-		ExpDate: "",
+		Price:  5.000,
 		Description: "Produzido com o lombo do atum, a parte mais nobre do peixe, e por isso é muito valorizado pela sua qualidade e sabor diferenciado.",
 	},
 }
@@ -62,12 +59,12 @@ func Load(db *gorm.DB) {
 		log.Fatalf("attaching foreign key error: %v", err)
 	}
 
-	for i, _ := range users {
+	for i := range users {
 		err = db.Debug().Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
-		products[i].UserID = users[i].ID
+		products[i].OwnerID = users[i].ID
 
 		err = db.Debug().Model(&models.Product{}).Create(&products[i]).Error
 		if err != nil {

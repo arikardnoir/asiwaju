@@ -3,17 +3,14 @@ package models
 import (
 	"errors"
 	"html"
-	"log"
 	"strings"
 	"time"
 
-	"github.com/badoux/checkmail"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
-	"golang.org/x/crypto/bcrypt"
 )
 
-//Product struct for Product
+// Product struct for Product
 type Product struct {
 	ID          uuid.UUID `gorm:"primary_key;auto_increment" json:"id"`
 	Name        string    `gorm:"size:255;not null" json:"name"`
@@ -22,15 +19,15 @@ type Product struct {
 	Size        string    `gorm:"size:200;null" json:"size"`
 	Model       string    `gorm:"size:255;null" json:"model"`
 	Price       float64   `gorm:"default:0.00;null" json:"price"`
-	Owner    		User      `json:"owner"`
-	OwnerID  		uint32    `gorm:"not null" json:"owner_id"`
-	ExpDate			time.Time `gorm:json:"exp_date"`
+	Owner       User      `json:"owner"`
+	OwnerID     uuid.UUID `gorm:"not null" json:"owner_id"`
+	ExpDate     time.Time `gorm:"null" json:"exp_date"`
 	Description string    `gorm:"size:2000;null" json:"description"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-//ResponseProduct return for the struct Product
+// ResponseProduct return for the struct Product
 type ResponseProduct struct {
 	ID          uuid.UUID
 	Name        string
@@ -39,16 +36,16 @@ type ResponseProduct struct {
 	Size        string
 	Model       string
 	Price       float64
-	ExpDate			time.Time
-	Owner				User{}
-	OwnerID			uint32
+	ExpDate     time.Time
+	Owner       User
+	OwnerID     uuid.UUID
 	Description string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-//SanitizeProduct the Product response
-func SanitizeProduct(s Product) ResponseProduct {
+// SanitizeProduct the Product response
+func SanitizeProduct(p Product) ResponseProduct {
 	return ResponseProduct{
 		p.ID,
 		p.Name,
@@ -66,7 +63,7 @@ func SanitizeProduct(s Product) ResponseProduct {
 	}
 }
 
-//Prepare set value for Product
+// Prepare set value for Product
 func (p *Product) Prepare() {
 	p.ID = uuid.Must(uuid.NewRandom())
 	p.Name = html.EscapeString(strings.TrimSpace(p.Name))
@@ -75,14 +72,12 @@ func (p *Product) Prepare() {
 	p.Size = html.EscapeString(strings.TrimSpace(p.Size))
 	p.Model = html.EscapeString(strings.TrimSpace(p.Model))
 	p.Owner = User{}
-	p.Price = p.Price
-	p.ExpDate = p.ExpDate
 	p.Description = html.EscapeString(strings.TrimSpace(p.Description))
 	p.CreatedAt = time.Now()
 	p.UpdatedAt = time.Now()
 }
 
-//Validate validations on actions
+// Validate validations on actions
 func (p *Product) Validate(action string) error {
 	switch strings.ToLower(action) {
 	case "update":
@@ -118,18 +113,17 @@ func (p *Product) Validate(action string) error {
 	}
 }
 
-//SaveProduct save Product
+// SaveProduct save Product
 func (p *Product) SaveProduct(db *gorm.DB) (*Product, error) {
 
-	var err error
-	err = db.Debug().Create(&p).Error
+	err := db.Debug().Create(&p).Error
 	if err != nil {
 		return &Product{}, err
 	}
 	return p, nil
 }
 
-//FindAllProducts get all Products
+// FindAllProducts get all Products
 func (p *Product) FindAllProducts(db *gorm.DB) (*[]Product, error) {
 	var err error
 	Products := []Product{}
@@ -140,26 +134,24 @@ func (p *Product) FindAllProducts(db *gorm.DB) (*[]Product, error) {
 	return &Products, err
 }
 
-//FindProductByID fin Product by id
+// FindProductByID fin Product by id
 func (p *Product) FindProductByID(db *gorm.DB, oid uuid.UUID) (*Product, error) {
-	var err error
-	err = db.Debug().Model(Product{}).Where("id = ?", oid).Take(&s).Error
+	err := db.Debug().Model(Product{}).Where("id = ?", oid).Take(&p).Error
 	if err != nil {
 		return &Product{}, err
 	}
 	if gorm.IsRecordNotFoundError(err) {
 		return &Product{}, errors.New("Product Not Found")
 	}
-	s.Password = ""
-	return s, err
+	return p, err
 }
 
-//UpdateAProduct update Product
+// UpdateAProduct update Product
 func (p *Product) UpdateAProduct(db *gorm.DB, pid uuid.UUID) (*Product, error) {
 
 	db = db.Debug().Model(&Product{}).Where("id = ?", pid).Take(&Product{}).UpdateColumns(
 		map[string]interface{}{
-			"name":        p.Name
+			"name":        p.Name,
 			"brand":       p.Brand,
 			"image":       p.Image,
 			"size":        p.Size,
@@ -168,20 +160,19 @@ func (p *Product) UpdateAProduct(db *gorm.DB, pid uuid.UUID) (*Product, error) {
 			"exp_date":    p.ExpDate,
 			"description": p.Description,
 			"updated_at":  time.Now(),
-		},
-	)
+		})
 	if db.Error != nil {
 		return &Product{}, db.Error
 	}
 	// This is the display the updated Product
-	err = db.Debug().Model(&Product{}).Where("id = ?", pid).Error
+	err := db.Debug().Model(&Product{}).Where("id = ?", pid).Error
 	if err != nil {
 		return &Product{}, err
 	}
-	return s, nil
+	return p, nil
 }
 
-//DeleteAProduct delete Product by id
+// DeleteAProduct delete Product by id
 func (p *Product) DeleteAProduct(db *gorm.DB, pid uuid.UUID, oid uuid.UUID) (int64, error) {
 
 	db = db.Debug().Model(&Product{}).Where("id = ? and owner_id = ?", pid, oid).Take(&Product{}).Delete(&Product{})

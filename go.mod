@@ -1,4 +1,4 @@
-module github.com/arikardnoir/qiira-api-integration
+module github.com/arikardnoir/asiwaju
 
 go 1.13
 

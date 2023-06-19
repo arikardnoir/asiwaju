@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
+	"github.com/arikardnoir/asiwaju/api/auth"
+	"github.com/arikardnoir/asiwaju/api/models"
+	"github.com/arikardnoir/asiwaju/api/responses"
+	"github.com/arikardnoir/asiwaju/api/utils/formaterror"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/victorsteven/fullstack/api/auth"
-	"github.com/victorsteven/fullstack/api/models"
-	"github.com/victorsteven/fullstack/api/responses"
-	"github.com/victorsteven/fullstack/api/utils/formaterror"
 )
 
 func (server *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -61,13 +61,13 @@ func (server *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 func (server *Server) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	uid, err := uuid.Parse(vars["id"])
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
 	user := models.User{}
-	userGotten, err := user.FindUserByID(server.DB, uint32(uid))
+	userGotten, err := user.FindUserByID(server.DB, uid)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
@@ -78,7 +78,7 @@ func (server *Server) GetUser(w http.ResponseWriter, r *http.Request) {
 func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	uid, err := uuid.Parse(vars["id"])
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
@@ -99,7 +99,7 @@ func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(uid) {
+	if tokenID != uid {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -109,7 +109,7 @@ func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	updatedUser, err := user.UpdateAUser(server.DB, uint32(uid))
+	updatedUser, err := user.UpdateAUser(server.DB, uid)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		responses.ERROR(w, http.StatusInternalServerError, formattedError)
@@ -124,7 +124,7 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{}
 
-	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	uid, err := uuid.Parse(vars["id"])
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
@@ -134,11 +134,11 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != 0 && tokenID != uint32(uid) {
+	if tokenID != uuid.Nil && tokenID != uid {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
-	_, err = user.DeleteAUser(server.DB, uint32(uid))
+	_, err = user.DeleteAUser(server.DB, uid)
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
@@ -146,4 +146,3 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Entity", fmt.Sprintf("%d", uid))
 	responses.JSON(w, http.StatusNoContent, "")
 }
-view raw
