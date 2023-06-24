@@ -2,19 +2,21 @@ package seed
 
 import (
 	"log"
-
+	"github.com/google/uuid"
 	"github.com/arikardnoir/asiwaju/api/models"
 	"github.com/jinzhu/gorm"
 )
 
 var users = []models.User{
 	models.User{
+		ID:          uuid.Must(uuid.NewRandom()),
 		Fullname: "Eloisa da Silva",
 		Nickname: "elo.silva",
 		Email:    "eloisa@gmail.com",
 		Password: "password",
 	},
 	models.User{
+		ID:          uuid.Must(uuid.NewRandom()),
 		Fullname: "Adriel Van-dunem",
 		Nickname: "adri.van",
 		Email:    "adriel@gmail.com",
@@ -24,6 +26,7 @@ var users = []models.User{
 
 var products = []models.Product{
 	models.Product{
+		ID:          uuid.Must(uuid.NewRandom()),
 		Name:   "AIR JORDAN 1 RETRO LOW OG EX",
 		Brand: "Nike",
 		Image:   "https://www.nike.com.br/air-jordan-1-retro-low-og-ex-023577.html?cor=ID#pid1",
@@ -33,6 +36,7 @@ var products = []models.Product{
 		Description: "Chame-o de obra-prima inacabada. Esta versão trabalhada do AJ1 Low tem tudo a ver com bordas expostas e desgastadas, trazendo uma estética desconstruída para seu têni favorito.",
 	},
 	models.Product{
+		ID:          uuid.Must(uuid.NewRandom()),
 		Name:   "Gomes Da Costa Atum Sólido em Óleo Delivery",
 		Brand:  "Gomes Da Costa",
 		Image:  "https://images.rappi.com.br/products/630151d9-9e33-460a-bed0-4cc527424a74.jpg?d=128x128&e=webp&q=70",

@@ -81,19 +81,6 @@ func (p *Product) Prepare() {
 func (p *Product) Validate(action string) error {
 	switch strings.ToLower(action) {
 	case "update":
-		if p.Name == "" {
-			return errors.New("Required Name")
-		}
-		if p.Brand == "" {
-			return errors.New("Required Brand")
-		}
-		if p.Image == "" {
-			return errors.New("Required Image")
-		}
-		if p.Price == 0.00 {
-			return errors.New("Required Price")
-		}
-
 		return nil
 
 	default:
@@ -124,21 +111,35 @@ func (p *Product) SaveProduct(db *gorm.DB) (*Product, error) {
 }
 
 // FindAllProducts get all Products
-func (p *Product) FindAllProducts(db *gorm.DB) (*[]Product, error) {
+func (p *Product) FindAllProducts(db *gorm.DB, oid uuid.UUID) (*[]Product, error) {
 	var err error
-	Products := []Product{}
-	err = db.Debug().Model(&Product{}).Limit(100).Find(&Products).Error
+	products := []Product{}
+	err = db.Debug().Model(&Product{}).Where("owner_id = ?", oid).Limit(100).Find(&products).Error
 	if err != nil {
 		return &[]Product{}, err
 	}
-	return &Products, err
+	if len(products) > 0 {
+		for i, _ := range products {
+			err := db.Debug().Model(&User{}).Where("id = ?", oid).Take(&products[i].Owner).Error
+			if err != nil {
+				return &[]Product{}, err
+			}
+		}
+	}
+	return &products, err
 }
 
 // FindProductByID fin Product by id
-func (p *Product) FindProductByID(db *gorm.DB, oid uuid.UUID) (*Product, error) {
-	err := db.Debug().Model(Product{}).Where("id = ?", oid).Take(&p).Error
+func (p *Product) FindProductByID(db *gorm.DB, pid uuid.UUID, oid uuid.UUID) (*Product, error) {
+	err := db.Debug().Model(Product{}).Where("id = ?", pid).Where("owner_id = ?", oid).Take(&p).Error
 	if err != nil {
 		return &Product{}, err
+	}
+	if oid != uuid.Nil {
+		err = db.Debug().Model(&User{}).Where("id = ?", oid).Take(&p.Owner).Error
+		if err != nil {
+			return &Product{}, err
+		}
 	}
 	if gorm.IsRecordNotFoundError(err) {
 		return &Product{}, errors.New("Product Not Found")

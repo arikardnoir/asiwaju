@@ -28,6 +28,7 @@ func (server *Server) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	product.ID = uuid.Must(uuid.NewRandom())
 	product.Prepare()
 	err = product.Validate("")
 	if err != nil {
@@ -57,7 +58,13 @@ func (server *Server) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	product := models.Product{}
 
-	products, err := product.FindAllProducts(server.DB)
+	oid, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	products, err := product.FindAllProducts(server.DB, oid)
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
@@ -75,7 +82,13 @@ func (server *Server) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	product := models.Product{}
 
-	productReceived, err := product.FindProductByID(server.DB, pid)
+	oid, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	productReceived, err := product.FindProductByID(server.DB, pid, oid)
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
@@ -192,4 +205,22 @@ func (server *Server) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Entity", fmt.Sprintf("%d", pid))
 	responses.JSON(w, http.StatusNoContent, "")
+}
+
+func (server *Server) GetOpenProduct(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	pid, err := uuid.Parse(vars["id"])
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+	product := models.Product{}
+
+	productReceived, err := product.FindProductByID(server.DB, pid, uuid.Nil)
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+	responses.JSON(w, http.StatusOK, productReceived)
 }

@@ -27,6 +27,7 @@ func (server *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	user.ID = uuid.Must(uuid.NewRandom())
 	user.Prepare()
 	err = user.Validate("")
 	if err != nil {

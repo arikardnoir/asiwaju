@@ -73,18 +73,6 @@ func (u *User) Prepare() {
 func (u *User) Validate(action string) error {
 	switch strings.ToLower(action) {
 	case "update":
-		if u.Fullname == "" {
-			return errors.New("Required Fullname")
-		}
-		if u.Nickname == "" {
-			return errors.New("Required Nickname")
-		}
-		if u.Password == "" {
-			return errors.New("Required Password")
-		}
-		if u.Email == "" {
-			return errors.New("Required Email")
-		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
 			return errors.New("Invalid Email")
 		}
@@ -165,7 +153,7 @@ func (u *User) UpdateAUser(db *gorm.DB, uid uuid.UUID) (*User, error) {
 			"fullname":  u.Fullname,
 			"nickname":  u.Nickname,
 			"email":     u.Email,
-			"update_at": time.Now(),
+			"updated_at": time.Now(),
 		},
 	)
 	if db.Error != nil {
