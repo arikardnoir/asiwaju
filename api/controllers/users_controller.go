@@ -70,7 +70,7 @@ func (server *Server) GetUser(w http.ResponseWriter, r *http.Request) {
 	user := models.User{}
 	userGotten, err := user.FindUserByID(server.DB, uid)
 	if err != nil {
-		responses.ERROR(w, http.StatusBadRequest, err)
+		responses.ERROR(w, http.StatusNotFound, errors.New("User not found"))
 		return
 	}
 	responses.JSON(w, http.StatusOK, userGotten)

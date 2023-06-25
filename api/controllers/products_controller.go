@@ -29,19 +29,18 @@ func (server *Server) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	product.ID = uuid.Must(uuid.NewRandom())
-	product.Prepare()
-	err = product.Validate("")
-	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
+
 	oid, err := auth.ExtractTokenID(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if oid != product.OwnerID {
-		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+
+	product.OwnerID = oid
+	product.Prepare()
+	err = product.Validate("")
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	productCreated, err := product.SaveProduct(server.DB)
@@ -99,66 +98,56 @@ func (server *Server) GetProduct(w http.ResponseWriter, r *http.Request) {
 func (server *Server) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-
 	// Check if the Product id is valid
 	pid, err := uuid.Parse(vars["id"])
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
-
-	//CHeck if the auth token is valid and  get the user id from it
+	//Check if the auth token is valid and  get the user id from it
 	oid, err := auth.ExtractTokenID(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 
-	// Check if the Product exist
-	product := models.Product{}
-	err = server.DB.Debug().Model(models.Product{}).Where("id = ?", pid).Take(&product).Error
+	productFinder := models.Product{}
+	productChecker, err := productFinder.FindProductByID(server.DB, pid, oid)
 	if err != nil {
-		responses.ERROR(w, http.StatusNotFound, errors.New("Product not found"))
+		formattedError := formaterror.FormatError(err.Error())
+		responses.ERROR(w, http.StatusInternalServerError, formattedError)
 		return
 	}
 
 	// If a user attempt to update a Product not belonging to him
-	if oid != product.OwnerID {
+	if oid != productChecker.OwnerID {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	// Read the data Producted
+
+	// Read the data Product
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-
+	
 	// Start processing the request data
-	productUpdate := models.Product{}
-	err = json.Unmarshal(body, &productUpdate)
+	product := models.Product{}
+	err = json.Unmarshal(body, &product)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	//Also check if the request user id is equal to the one gotten from token
-	if oid != productUpdate.OwnerID {
-		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-
-	productUpdate.Prepare()
-	err = productUpdate.Validate("")
+	product.Prepare()
+	err = product.Validate("update")
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	productUpdate.ID = product.ID //this is important to tell the model the Product id to update, the other update field are set above
-
-	productUpdated, err := productUpdate.UpdateAProduct(server.DB, productUpdate.ID)
-
+	productUpdated, err := product.UpdateAProduct(server.DB, pid)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		responses.ERROR(w, http.StatusInternalServerError, formattedError)

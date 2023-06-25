@@ -19,7 +19,6 @@ type Product struct {
 	Size        string    `gorm:"size:200;null" json:"size"`
 	Model       string    `gorm:"size:255;null" json:"model"`
 	Price       float64   `gorm:"default:0.00;null" json:"price"`
-	Owner       User      `json:"owner"`
 	OwnerID     uuid.UUID `gorm:"not null" json:"owner_id"`
 	ExpDate     time.Time `gorm:"null" json:"exp_date"`
 	Description string    `gorm:"size:2000;null" json:"description"`
@@ -37,7 +36,6 @@ type ResponseProduct struct {
 	Model       string
 	Price       float64
 	ExpDate     time.Time
-	Owner       User
 	OwnerID     uuid.UUID
 	Description string
 	CreatedAt   time.Time
@@ -55,7 +53,6 @@ func SanitizeProduct(p Product) ResponseProduct {
 		p.Model,
 		p.Price,
 		p.ExpDate,
-		p.Owner,
 		p.OwnerID,
 		p.Description,
 		p.CreatedAt,
@@ -65,13 +62,11 @@ func SanitizeProduct(p Product) ResponseProduct {
 
 // Prepare set value for Product
 func (p *Product) Prepare() {
-	p.ID = uuid.Must(uuid.NewRandom())
 	p.Name = html.EscapeString(strings.TrimSpace(p.Name))
 	p.Brand = html.EscapeString(strings.TrimSpace(p.Brand))
 	p.Image = html.EscapeString(strings.TrimSpace(p.Image))
 	p.Size = html.EscapeString(strings.TrimSpace(p.Size))
 	p.Model = html.EscapeString(strings.TrimSpace(p.Model))
-	p.Owner = User{}
 	p.Description = html.EscapeString(strings.TrimSpace(p.Description))
 	p.CreatedAt = time.Now()
 	p.UpdatedAt = time.Now()
@@ -118,14 +113,7 @@ func (p *Product) FindAllProducts(db *gorm.DB, oid uuid.UUID) (*[]Product, error
 	if err != nil {
 		return &[]Product{}, err
 	}
-	if len(products) > 0 {
-		for i, _ := range products {
-			err := db.Debug().Model(&User{}).Where("id = ?", oid).Take(&products[i].Owner).Error
-			if err != nil {
-				return &[]Product{}, err
-			}
-		}
-	}
+
 	return &products, err
 }
 
@@ -135,12 +123,7 @@ func (p *Product) FindProductByID(db *gorm.DB, pid uuid.UUID, oid uuid.UUID) (*P
 	if err != nil {
 		return &Product{}, err
 	}
-	if oid != uuid.Nil {
-		err = db.Debug().Model(&User{}).Where("id = ?", oid).Take(&p.Owner).Error
-		if err != nil {
-			return &Product{}, err
-		}
-	}
+
 	if gorm.IsRecordNotFoundError(err) {
 		return &Product{}, errors.New("Product Not Found")
 	}
@@ -161,15 +144,17 @@ func (p *Product) UpdateAProduct(db *gorm.DB, pid uuid.UUID) (*Product, error) {
 			"exp_date":    p.ExpDate,
 			"description": p.Description,
 			"updated_at":  time.Now(),
-		})
+		},
+	)
 	if db.Error != nil {
 		return &Product{}, db.Error
 	}
 	// This is the display the updated Product
-	err := db.Debug().Model(&Product{}).Where("id = ?", pid).Error
+	err := db.Debug().Model(&Product{}).Where("id = ?", pid).Take(&p).Error
 	if err != nil {
 		return &Product{}, err
 	}
+
 	return p, nil
 }
 
