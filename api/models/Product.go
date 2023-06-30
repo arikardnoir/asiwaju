@@ -76,6 +76,18 @@ func (p *Product) Prepare() {
 func (p *Product) Validate(action string) error {
 	switch strings.ToLower(action) {
 	case "update":
+		if p.Name == "" {
+			return errors.New("Required Name")
+		}
+		if p.Brand == "" {
+			return errors.New("Required Brand")
+		}
+		if p.Image == "" {
+			return errors.New("Required Image")
+		}
+		if p.Price == 0.00 {
+			return errors.New("Required Price")
+		}
 		return nil
 
 	default:
@@ -167,4 +179,16 @@ func (p *Product) DeleteAProduct(db *gorm.DB, pid uuid.UUID, oid uuid.UUID) (int
 		return 0, db.Error
 	}
 	return db.RowsAffected, nil
+}
+
+// FindAllOpenProducts get all Products
+func (p *Product) FindAllOpenProducts(db *gorm.DB) (*[]Product, error) {
+	var err error
+	products := []Product{}
+	err = db.Debug().Model(&Product{}).Limit(100).Find(&products).Error
+	if err != nil {
+		return &[]Product{}, err
+	}
+
+	return &products, err
 }

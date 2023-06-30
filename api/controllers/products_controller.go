@@ -89,7 +89,7 @@ func (server *Server) GetProduct(w http.ResponseWriter, r *http.Request) {
 
 	productReceived, err := product.FindProductByID(server.DB, pid, oid)
 	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
+		responses.ERROR(w, http.StatusNotFound, err)
 		return
 	}
 	responses.JSON(w, http.StatusOK, productReceived)
@@ -178,7 +178,7 @@ func (server *Server) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	product := models.Product{}
 	err = server.DB.Debug().Model(models.Product{}).Where("id = ?", pid).Take(&product).Error
 	if err != nil {
-		responses.ERROR(w, http.StatusNotFound, errors.New("Unauthorized"))
+		responses.ERROR(w, http.StatusNotFound, errors.New("Product not found"))
 		return
 	}
 
