@@ -1,4 +1,3 @@
-
 package controllertests
 
 import (
@@ -10,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/arikardnoir/asiwaju/api/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/arikardnoir/asiwaju/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
 
@@ -26,7 +25,7 @@ func TestCreateProduct(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Cannot seed user %v\n", err)
 	}
-	token,_, err := server.SignIn(users[0].Email, "password") //Note the password in the database is already hashed, we want unhashed
+	token, _, err := server.SignIn(users[0].Email, "password") //Note the password in the database is already hashed, we want unhashed
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
@@ -49,11 +48,11 @@ func TestCreateProduct(t *testing.T) {
 			inputJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 40, "image": "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg", "description": "Serviço"}`,
 			statusCode:   201,
 			tokenGiven:   tokenString,
-			name:   			"BUFFET ALMOÇO NA MESA",
-			brand:  			"Pizza Hut",
-			price:  			40,
-			image:  			"https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg",
-			owner_id: 		choosedID,
+			name:         "BUFFET ALMOÇO NA MESA",
+			brand:        "Pizza Hut",
+			price:        40,
+			image:        "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg",
+			owner_id:     choosedID,
 			description:  "Serviço",
 			errorMessage: "",
 		},
@@ -84,13 +83,13 @@ func TestCreateProduct(t *testing.T) {
 			errorMessage: "Required Brand",
 		},
 		{
-			inputJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 0.00, "image": "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg", "description": "Serviço"}`,			
+			inputJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 0.00, "image": "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg", "description": "Serviço"}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Price",
 		},
 		{
-			inputJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 40, "image": "", "description": "Serviço"}`,			
+			inputJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 40, "image": "", "description": "Serviço"}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Image",
@@ -109,6 +108,7 @@ func TestCreateProduct(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
+		// trunk-ignore(golangci-lint/gosimple)
 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
 		if err != nil {
 			fmt.Printf("Cannot convert to json: %v", err)
@@ -161,6 +161,7 @@ func TestGetProducts(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	var products []models.Product
+	// trunk-ignore(golangci-lint/gosimple)
 	err = json.Unmarshal([]byte(rr.Body.String()), &products)
 
 	assert.Equal(t, rr.Code, http.StatusOK)
@@ -196,14 +197,14 @@ func TestGetProductByID(t *testing.T) {
 		errorMessage string
 	}{
 		{
-			id:           product.ID,
-			statusCode:   200,
-			name:       	product.Name,
-			brand:      	product.Brand,
-			price:      	product.Price,
-			image:      	product.Image,
-			description:	product.Description,
-			owner_id:   	product.OwnerID,
+			id:          product.ID,
+			statusCode:  200,
+			name:        product.Name,
+			brand:       product.Brand,
+			price:       product.Price,
+			image:       product.Image,
+			description: product.Description,
+			owner_id:    product.OwnerID,
 		},
 		{
 			id:         uuid.Nil,
@@ -235,7 +236,7 @@ func TestGetProductByID(t *testing.T) {
 
 		assert.Equal(t, rr.Code, v.statusCode)
 		if v.statusCode == 200 {
-			assert.Equal(t, product.Name,  responseMap["name"])
+			assert.Equal(t, product.Name, responseMap["name"])
 			assert.Equal(t, product.Brand, responseMap["brand"])
 			assert.Equal(t, product.Price, responseMap["price"])
 			assert.Equal(t, product.Image, responseMap["image"])
@@ -264,12 +265,12 @@ func TestUpdateProduct(t *testing.T) {
 	ProductUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
 
 	//Login the user and get the authentication token
-	token,_, err := server.SignIn(ProductUserEmail, ProductUserPassword)
+	token, _, err := server.SignIn(ProductUserEmail, ProductUserPassword)
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
 	tokenString := fmt.Sprintf("Bearer %v", token)
-		
+
 	// Get only the first product
 	AuthProductID = products[0].ID
 	AuthProductOwnerID = products[0].OwnerID
@@ -290,12 +291,12 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			// Convert int64 to int first before converting to string
 			id:           AuthProductID,
-			updateJSON:    `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 40, "image": "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg", "description": "Serviço"}`,
+			updateJSON:   `{"name":"BUFFET ALMOÇO NA MESA", "brand":"Pizza Hut", "price": 40, "image": "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg", "description": "Serviço"}`,
 			statusCode:   200,
-			name:   			"BUFFET ALMOÇO NA MESA",
-			brand:  			"Pizza Hut",
-			price:  			40,
-			image:  			"https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg",
+			name:         "BUFFET ALMOÇO NA MESA",
+			brand:        "Pizza Hut",
+			price:        40,
+			image:        "https://www.pizzahut.pt/wp-content/uploads/BUFFET_ALMOCO_na_mesa_8_95_30_junho-scaled.jpg",
 			description:  "Serviço",
 			owner_id:     AuthProductOwnerID,
 			tokenGiven:   tokenString,
@@ -346,8 +347,8 @@ func TestUpdateProduct(t *testing.T) {
 			errorMessage: "Required Image",
 		},
 		{
-			id:         uuid.Nil,
-			statusCode: 401,
+			id:           uuid.Nil,
+			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 	}
@@ -406,7 +407,7 @@ func TestDeleteProduct(t *testing.T) {
 	ProductUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
 
 	//Login the user and get the authentication token
-	token,_, err := server.SignIn(ProductUserEmail, ProductUserPassword)
+	token, _, err := server.SignIn(ProductUserEmail, ProductUserPassword)
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
@@ -414,12 +415,12 @@ func TestDeleteProduct(t *testing.T) {
 
 	//Get only the first product
 	firstProductID := products[0].ID
-	firstUserID   := products[0].OwnerID
+	firstUserID := products[0].OwnerID
 
 	// Get only the second product
 	AuthProductID = products[1].ID
 	ProductUserID = products[1].OwnerID
-	
+
 	productSample := []struct {
 		id           uuid.UUID
 		owner_id     uuid.UUID
