@@ -1,1 +1,1 @@
-web: asiwaju
+web: web/asiwaju
